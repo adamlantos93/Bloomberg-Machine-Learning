@@ -225,7 +225,7 @@ def coordinate_descent_lasso(X, y, lambda_reg=0.1, num_iter=1000):   #cyclic coo
     loss_hist[0]=compute_square_loss(X,y,theta)
     theta_hist[0,:]=theta
     
-    error_threshold=1/100000
+    error_threshold=1/10000
     n=0
     
     for i in range(num_iter):
@@ -260,7 +260,7 @@ def coordinate_descent_lasso(X, y, lambda_reg=0.1, num_iter=1000):   #cyclic coo
     
 
 def main():
-    #Loading the dataset.
+    #Loading the dataset
     df = pd.read_csv('data.csv', delimiter=',')
     X = df.values[:,:-1]
     y = df.values[:,-1]
