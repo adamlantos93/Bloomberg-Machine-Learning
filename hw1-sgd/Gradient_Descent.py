@@ -15,7 +15,6 @@ from numpy.linalg import inv
 #### Normalization
 
 def feature_normalization(train, test):
-#	print(train[:,47])
 	max_feat=[]
 	shift=[]
 	for i in range(len(train[0,:])):
@@ -103,10 +102,12 @@ def batch_grad_descent(X, y, alpha, num_iter=1000, check_gradient=False):
         if error < error_threshold and i > 2:
             print('The iteration is',i,'and the final loss percentage is',loss_hist[i+1])
             n=1
+            final_iter=i
             break
     if n==0:
+        final_iter=num_iter
         print('Theshold', error_threshold*100,'% did not pass; final loss percentage is',loss_hist[num_iter])
-    return theta_hist, loss_hist
+    return theta_hist, loss_hist, final_iter
 
 
 ###################################################
@@ -159,16 +160,18 @@ def regularized_grad_descent(X, y, alpha=0.1, lambda_reg=1, num_iter=1000, check
         if error < error_threshold and i>1:
             print('The iteration is',i,'and the final loss percentage is',loss_hist[i+1])
             n=1
+            final_iter=i
             break
     if n==0:
+        final_iter=num_iter
         print('Theshold', error_threshold*100,'% did not pass; final loss percentage is',loss_hist[num_iter])
-    return theta_hist, loss_hist
+    return theta_hist, loss_hist, final_iter
     
 
 
 #############################################
 ### Stochastic/Minibatch Gradient Descent
-def stochastic_grad_descent(X, y, alpha=0.1, lambda_reg=1, epochs=1000, batch_size=20):
+def minibatch_grad_descent(X, y, alpha=0.1, lambda_reg=1, epochs=1000, batch_size=20):
     """
     In this question you will implement stochastic gradient descent with a regularization term
                 NOTE: In SGD, it's not always a good idea to use a fixed step size. Usually it's set to 1/sqrt(t) or 1/t
@@ -185,17 +188,17 @@ def stochastic_grad_descent(X, y, alpha=0.1, lambda_reg=1, epochs=1000, batch_si
     theta_hist = np.zeros((epochs+1, num_features))  #Initialize theta_hist
     loss_hist = np.zeros((epochs+1)) #Initialize loss_hist
     #TODO
-    X_batch=np.zeros((batch_size, num_features))
+    X_batch=np.zeros((batch_size, num_features))  #for batch_size=1, we perform stochastic GD
     y_batch=np.zeros((batch_size, num_features))
     loss_hist[0]=compute_square_loss(X,y,theta)
     theta_hist[0,:]=theta
     error_threshold=1/1000
     n=0
-    for j in range(epochs):
-        sample=random.sample(range(0,num_instances),batch_size)
+    for j in range(epochs):  #at every epoch, we select a different batch
+        sample=random.sample(range(0,num_instances),batch_size) #at every epoch, we cycle through batches chosen randomly
         X_batch=X[sample,:]
         y_batch=y[sample]
-        for i in range(60):
+        for i in range(60): #60 steps per batch
             grad=compute_regularized_square_loss_gradient(X_batch, y_batch, theta,lambda_reg)
             alpha=1/(i+1) #variable step size
             theta=theta-alpha*grad 
@@ -213,8 +216,58 @@ def stochastic_grad_descent(X, y, alpha=0.1, lambda_reg=1, epochs=1000, batch_si
     return theta_hist, loss_hist, final_epoch
    
    
+def binarize_data(y): #takes data and maps it to {-1,1}
+	for i in range(y.size):
+		if y[i]>=0:
+			y[i]=1
+		else:
+			y[i]=-1
+	return y
+
+def compute_perceptron_loss(X, y, theta):
+    loss=0
+    for i in range(y.size):
+        A=max(0,-y[i]*np.dot(theta,X[i,:]))
+        loss=loss+A
+    loss=loss/y.size
+    return loss
+	
+   
 #############################################
-### Shooting algorithm
+### Perceptron algorithm
+def regularized_perceptron(X, y, lambda_reg=0.1, epochs=100):
+    num_instances, num_features = X.shape[0], X.shape[1]
+    theta = np.zeros(num_features) #Initialize theta
+
+    theta_hist = np.zeros((epochs+1, num_features))  #Initialize theta_hist
+    loss_hist = np.zeros((epochs+1)) #Initialize loss_hist
+    
+    y=binarize_data(y) #turn it into a classification problem
+    loss_hist[0]=compute_square_loss(X,y,theta)
+    theta_hist[0,:]=theta
+    for j in range(epochs):  #End when hyperplane w*x=0 separates the data
+        m=1 #we find the hyperplane when at the end of an epoch we get m=1
+        for i in range(num_instances): #cycling through data
+            if y[i]*np.dot(X[i,:],theta) <= 0:
+                subgrad=y[i]*X[i,:]
+                theta=theta+subgrad-2*lambda_reg*theta
+                m=0
+        theta_hist[j+1,:]=theta 
+        loss_hist[j+1]=compute_perceptron_loss(X, y, theta)
+        if m==1:
+            final_epoch=j
+            print('We found the hyperplane that separates the two classes.')
+            print('Final loss is',loss_hist[j+1])
+            break
+    if m==0:
+        print('After',epochs,'epochs, we did not find a hyperplane that separates the two classes.\n')
+        print('Final loss is:', loss_hist[epochs])
+        final_epoch=epochs
+    return theta_hist, loss_hist, final_epoch
+
+
+
+
 def coordinate_descent_lasso(X, y, lambda_reg=0.1, num_iter=1000):   #cyclic coordinate descent
     (num_instances, num_features) = X.shape    #instances are samples
     
@@ -228,7 +281,7 @@ def coordinate_descent_lasso(X, y, lambda_reg=0.1, num_iter=1000):   #cyclic coo
     loss_hist[0]=compute_square_loss(X,y,theta)
     theta_hist[0,:]=theta
     
-    error_threshold=1/10000
+    error_threshold=1/100000
     n=0
     
     for i in range(num_iter):
@@ -259,11 +312,21 @@ def coordinate_descent_lasso(X, y, lambda_reg=0.1, num_iter=1000):   #cyclic coo
     if n==0:
         print('Theshold', error_threshold*100,'% did not pass; final loss percentage is',loss_hist[num_iter])
         final_iter=num_iter
+    #print(theta_hist[final_iter,:],'lala') #to get results for weights
     return theta_hist, loss_hist, final_iter
     
 
+def validation_square_loss(X, y, w):
+	loss_valid=compute_square_loss(X, y, w)
+	print('The square loss on the validation data is:',loss_valid)
+
+def validation_perceptron_loss(X,y,w):
+    y=binarize_data(y)
+    loss_valid=compute_perceptron_loss(X, y, w)
+    print('The square loss on the validation data is:',loss_valid)
+
 def main():
-    #Loading the dataset
+    #Loading the dataset.
     df = pd.read_csv('data.csv', delimiter=',')
     X = df.values[:,:-1]
     y = df.values[:,-1]
@@ -279,12 +342,21 @@ def main():
     X_test = np.hstack((X_test, np.ones((X_test.shape[0], 1))*B)) # Add bias term 
     
     #results=regularized_grad_descent(X_train, y_train, alpha=0.01, lambda_reg=0.05, num_iter=1000, check_gradient=False)
+    #validation_square_loss(X_test, y_test, w)
     
-    #results=stochastic_grad_descent(X_train, y_train, alpha=0.01, lambda_reg=0.05, epochs=1000, batch_size=32)
+    #results=minibatch_grad_descent(X_train, y_train, alpha=0.01, lambda_reg=0.05, epochs=1000, batch_size=32)
     #print('The losses for the final 4 epochs are:', results[1][results[2]-2:results[2]+1])
+    #validation_square_loss(X_test, y_test, w)
     
-    results=coordinate_descent_lasso(X_train, y_train, lambda_reg=0.5, num_iter=1000)
-    print('The losses for the final 4 iterations are:', results[1][results[2]-2:results[2]+2])
+    #results=coordinate_descent_lasso(X_train, y_train, lambda_reg=0.5, num_iter=1000)
+    #print('The losses for the final 4 iterations on the training set are:', results[1][results[2]-2:results[2]+2])
+    #validation_square_loss(X_test, y_test, w)
+    
+    results=regularized_perceptron(X_train, y_train, lambda_reg=0.03, epochs=5000)
+    w=results[0][results[2]][:]
+    #print(w)
+    validation_perceptron_loss(X_test, y_test, w)
+    
 
 if __name__ == "__main__":
     main()
