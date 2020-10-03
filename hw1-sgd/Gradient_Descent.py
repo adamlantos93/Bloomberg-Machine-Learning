@@ -212,6 +212,9 @@ def stochastic_grad_descent(X, y, alpha=0.1, lambda_reg=1, epochs=1000, batch_si
         final_epoch=epochs
     return theta_hist, loss_hist, final_epoch
    
+   
+#############################################
+### Shooting algorithm
 def coordinate_descent_lasso(X, y, lambda_reg=0.1, num_iter=1000):   #cyclic coordinate descent
     (num_instances, num_features) = X.shape    #instances are samples
     
