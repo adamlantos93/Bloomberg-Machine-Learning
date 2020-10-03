@@ -233,7 +233,7 @@ def compute_perceptron_loss(X, y, theta):
     return loss
 	
    
-#############################################
+############################################
 ### Perceptron algorithm
 def regularized_perceptron(X, y, lambda_reg=0.1, epochs=100):
     num_instances, num_features = X.shape[0], X.shape[1]
