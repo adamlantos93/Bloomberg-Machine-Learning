@@ -352,9 +352,9 @@ def main():
     #print('The losses for the final 4 iterations on the training set are:', results[1][results[2]-2:results[2]+2])
     #validation_square_loss(X_test, y_test, w)
     
-    results=regularized_perceptron(X_train, y_train, lambda_reg=0.03, epochs=5000)
+    results=regularized_perceptron(X_train, y_train, lambda_reg=0.03, epochs=5000) #QUESTION: for λ big, the weights blow up, which should not happen!
     w=results[0][results[2]][:]
-    #print(w)
+    print(w)
     validation_perceptron_loss(X_test, y_test, w)
     
 
