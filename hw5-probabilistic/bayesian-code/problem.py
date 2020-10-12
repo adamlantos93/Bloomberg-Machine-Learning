@@ -61,7 +61,6 @@ def get_posterior_params(X, y_train, prior, likelihood_var = 0.2**2):
     prior_var=prior["var"]
     post_mean=np.dot( np.linalg.inv(np.dot(np.transpose(X), X)+likelihood_var*np.linalg.inv(prior_var) ) , np.dot(np.transpose(X), y_train)   )
     post_var=np.linalg.inv( np.dot(np.transpose(X), X)/likelihood_var+np.linalg.inv(prior_var) )
-    #print('LAAAA',type(post_mean), post_mean.shape)
     
     return post_mean, post_var
     
