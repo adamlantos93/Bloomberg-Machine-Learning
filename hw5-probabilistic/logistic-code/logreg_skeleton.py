@@ -70,7 +70,6 @@ def compute_logistic_loss(X, y, theta):
         #break
         s=y[i]*np.dot(X[i,:],theta)
         loss=loss-s/2+np.logaddexp(-s/2,s/2)  #I am adding log(1+exp(-s)) (to avoid overflow)
-    #print(X[1,:].shape,theta.shape)
     loss=loss/y.size
     return loss
     
