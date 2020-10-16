@@ -190,9 +190,9 @@ class AffineNode(object):
 		
     def backward(self):
         d_x = np.dot( np.transpose(self.w.out), self.d_out)  #\in R^(d)
-        d_w = np.matmul( np.transpose(self.d_out.reshape(1, self.d_out.shape[0])), self.x.out.reshape(1, self.x.out.shape[0]) ) #\in R^(m x d)
-        #Could also use:
-        d_w = np.dot(self.d_out.reshape((-1,1)), self.x.out.reshape((1,-1)))
+        
+        #d_w = np.matmul( np.transpose(self.d_out.reshape(1, self.d_out.shape[0])), self.x.out.reshape(1, self.x.out.shape[0]) ) 
+        d_w = np.dot(self.d_out.reshape((-1,1)), self.x.out.reshape((1,-1)))#\in R^(m x d)
         d_b = self.d_out
         self.x.d_out += d_x
         self.w.d_out += d_w
